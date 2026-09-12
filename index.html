@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#201b1b">
+  <meta name="description" content="칼질·볶기·뒤집기·간하기를 연주하고 마지막 박자에 서빙하는 오리지널 리듬 요리 게임.">
+  <title>SIZZLE SYNC</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="app" aria-live="polite">
+    <section id="screen-title" class="screen active" data-screen="title">
+      <div class="title-art" aria-hidden="true"><div class="steam steam-a"></div><div class="steam steam-b"></div><div class="pan-art"><i></i><b></b></div></div>
+      <div class="title-copy"><p class="eyebrow">MIDNIGHT SERVICE · RHYTHM COOKING</p><h1>SIZZLE<br><em>SYNC</em></h1><p class="hook">맛의 완성은 타이밍입니다.</p><p class="mechanic">D F J K로 조리하고, SPACE로 서빙하세요.</p><button class="primary" data-action="start">첫 서비스 시작 <span>ENTER</span></button><button class="text-button" data-action="song-select">노래 선택</button><button class="text-button" data-action="help">조리법 보기</button><p id="app-error" class="title-error" role="alert"></p><p class="title-meta">키친은 박자를 기억합니다 · <kbd>Enter</kbd> 시작 · <kbd>Esc</kbd> 일시정지</p></div>
+      <img class="title-chef" src="assets/chef.webp" alt="" onerror="this.hidden=true">
+    </section>
+
+    <section id="screen-song-select" class="screen" data-screen="song-select">
+      <header class="screen-head"><div><p class="eyebrow">THE MENU</p><h2>오늘의 서비스</h2></div><button class="icon-button" data-action="back">닫기</button></header>
+      <div id="track-list" class="track-list"></div>
+      <p class="menu-note">정식 서비스는 접시 65%, 연습 서비스는 50%가 목표입니다. 재료 정확도가 55% 이상인 접시를 마지막 박자에 서빙하세요. 보정값은 빠른 입력에 +, 늦은 입력에 −를 적용하며 다음 곡부터 반영됩니다.</p>
+      <div class="settings-strip"><label>난이도 <select id="difficulty"><option value="normal">정식 서비스</option><option value="relaxed">연습 서비스</option></select></label><label>볼륨 <input id="volume" type="range" min="0" max="1" step=".01" value=".72"></label><button data-action="mute" class="small-button" id="mute-button">소리 켜짐</button><label>보정 (다음 플레이 적용) <input id="offset" type="number" min="-200" max="200" step="5" value="0"> ms</label></div>
+    </section>
+
+    <section id="screen-play" class="screen play-screen" data-screen="play">
+      <header class="play-hud"><div class="hud-title"><span id="play-course">FIRST SERVICE</span><strong id="play-song">첫 주문</strong></div><div class="hud-stat"><span>점수</span><b id="score">000000</b></div><div class="hud-stat"><span>콤보</span><b id="combo">×0</b></div><div class="hud-stat patience-stat"><span>손님 기다림</span><i><b id="patience">100</b><em></em></i></div><button class="icon-button" data-action="pause">Ⅱ</button></header>
+      <div class="play-wrap"><canvas id="game-canvas" aria-label="SIZZLE SYNC 리듬 조리 화면"></canvas><div class="live-readout"><span id="judgement" aria-live="assertive"></span><span id="error-ms"></span></div><div class="recipe-card"><small>NEXT DISH</small><strong id="dish-name">준비 중</strong><span id="dish-progress">재료 0 / 0</span></div><div class="dish-goal"><span>오늘의 접시</span><b id="dish-count">0 / 14</b></div></div>
+      <div class="touch-controls" aria-label="터치 조작"><button data-lane="0" data-key="D">D<small>칼질</small></button><button data-lane="1" data-key="F">F<small>볶기</small></button><button data-lane="2" data-key="J">J<small>뒤집기</small></button><button data-lane="3" data-key="K">K<small>간하기</small></button><button data-lane="4" data-key="SPACE" class="serve-pad">SPACE<br><small>SERVE</small></button></div>
+      <footer class="play-help"><span><kbd>D</kbd><kbd>F</kbd><kbd>J</kbd><kbd>K</kbd> 조리</span><span><kbd>SPACE</kbd> 서빙</span><span>남은 시간 <b id="remaining-time">00:00</b></span><span id="time-readout">00:00</span></footer>
+    </section>
+
+    <section id="screen-pause" class="screen modal-screen" data-screen="pause"><div class="modal-card"><p class="eyebrow">KITCHEN PAUSED</p><h2>잠깐, 불을 줄였어요.</h2><p>박자와 홀드가 현재 위치에서 멈춥니다.</p><button class="primary" data-action="resume">계속하기 <span>Esc</span></button><button class="secondary" data-action="restart">다시 시작</button><button class="text-button" data-action="title">메인으로</button></div></section>
+    <section id="screen-results" class="screen modal-screen" data-screen="results"><div class="results-card"><p class="eyebrow">SERVICE COMPLETE</p><h2 id="result-title">서비스 종료</h2><div class="rank-display"><span id="result-rank">A</span><small>RANK</small></div><div class="result-grid"><div><small>SCORE</small><b id="result-score">000000</b></div><div><small>ACCURACY</small><b id="result-accuracy">0%</b></div><div><small>DISHES</small><b id="result-dishes">0 / 0</b></div><div><small>BEST COMBO</small><b id="result-combo">×0</b></div></div><p id="result-message" class="result-message"></p><button class="primary" data-action="retry">한 번 더 조리 <span>Enter</span></button><button class="primary" id="result-next" data-action="next">다음 서비스 <span>Enter</span></button><button class="secondary" data-action="song-select">메뉴로</button></div></section>
+    <section id="screen-help" class="screen modal-screen" data-screen="help"><div class="help-card"><button class="icon-button close-help" data-action="back">닫기</button><p class="eyebrow">SERVICE NOTES</p><h2>박자를 맛으로 바꾸는 법</h2><div class="help-columns"><div><h3>조리</h3><p><kbd>D</kbd> <kbd>F</kbd> <kbd>J</kbd> <kbd>K</kbd>가 네 개의 조리대입니다. 노트가 금색 선에 닿는 순간 누르면 재료가 익습니다.</p></div><div><h3>서빙</h3><p><kbd>SPACE</kbd>는 넓은 금색 서빙 큐입니다. 접시의 마지막 박자에 맞추면 손님이 웃습니다.</p></div><div><h3>홀드</h3><p>길게 이어진 노트는 끝까지 누르세요. 너무 일찍 놓으면 재료가 탑니다.</p></div><div><h3>판정</h3><p>PERFECT · GOOD · OK가 점수와 콤보를 만듭니다. 실수는 기다림을 줄입니다.</p></div></div><button class="primary" data-action="back">준비됐어요</button></div></section>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
