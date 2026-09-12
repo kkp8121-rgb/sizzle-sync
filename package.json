@@ -3,6 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "scripts": {"build":"node tools/build.mjs","serve":"node tools/server.cjs","test":"node --test tests/*.test.mjs","test:browser":"node tests/browser.cjs","test:campaign":"node tests/campaign.cjs","test:interaction":"node tests/interaction.cjs","pack":"node tools/pack.cjs"},
+  "scripts": {"build":"node tools/build.mjs","serve":"node tools/server.cjs","test":"node --test tests/*.test.mjs","test:browser":"node tests/browser.cjs","test:campaign":"node tests/campaign.cjs","test:interaction":"node tests/interaction.cjs","test:performance":"node tests/performance.cjs","pack":"node tools/pack.cjs"},
   "devDependencies": {"esbuild":"0.28.2","playwright":"1.63.0"}
 }
