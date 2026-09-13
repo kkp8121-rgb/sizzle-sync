@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { TRACKS } from '../src/tracks.js';
-import { advance, createRun, press, release, summary } from '../src/rhythm.js';
+import { advance, createRun, press, release, summary, ingredientQuality, INGREDIENT_QUALITY_THRESHOLD } from '../src/rhythm.js';
 
 function chart(notes, recipes = [], duration = 6) {
   return { id: 'test-kitchen', duration, notes, recipes };
@@ -92,6 +92,25 @@ test('recipe serves and burns are settled exactly once', () => {
   advance(run, 4);
   assert.equal(run.events.filter((event) => event.type === 'dish').length, 1);
   assert.equal(run.status, 'won');
+});
+
+test('dish quality is observable and separates quality from serve timing failures', () => {
+  const recipe = { id: 0, noteIds: ['ingredient'], serveId: 'serve' };
+  const qualityRun = createRun(chart([tap('ingredient', 0, 1, 0), serve('serve', 1, 2, 0)], [recipe], 4));
+  press(qualityRun, 0, 1.13);
+  release(qualityRun, 0, 1.14);
+  press(qualityRun, 1, 2);
+  const qualityDish = qualityRun.events.find((event) => event.type === 'dish');
+  assert.equal(ingredientQuality(qualityRun, qualityRun.recipes[0]), .5);
+  assert.equal(INGREDIENT_QUALITY_THRESHOLD, .55);
+  assert.equal(qualityDish.reason, 'quality');
+
+  const timingRun = createRun(chart([tap('ingredient', 0, 1, 0), serve('serve', 1, 2, 0)], [recipe], 3));
+  press(timingRun, 0, 1);
+  release(timingRun, 0, 1.01);
+  advance(timingRun, 3);
+  const timingDish = timingRun.events.find((event) => event.type === 'dish');
+  assert.equal(timingDish.reason, 'serve-miss');
 });
 
 test('count-in input is free, ghost presses are throttled per lane', () => {

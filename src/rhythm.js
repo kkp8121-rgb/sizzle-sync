@@ -3,6 +3,7 @@ const EPSILON = 1e-9;
 const DEFAULT_DIFFICULTY = Object.freeze({ perfect: 0.045, good: 0.09, ok: 0.14, requiredRatio: 0.65 });
 const RELAXED_DIFFICULTY = Object.freeze({ perfect: 0.07, good: 0.12, ok: 0.18, requiredRatio: 0.5 });
 const WEIGHTS = Object.freeze({ perfect: 1, good: 0.8, ok: 0.5, miss: 0 });
+export const INGREDIENT_QUALITY_THRESHOLD = 0.55;
 
 function clone(value) {
   return value == null ? value : JSON.parse(JSON.stringify(value));
@@ -84,7 +85,7 @@ function recipeFor(run, note) {
   return run.recipes.find((recipe) => recipe.noteIds?.includes(note.id) || recipe.serveId === note.id);
 }
 
-function ingredientQuality(run, recipe) {
+export function ingredientQuality(run, recipe) {
   const ids = Array.isArray(recipe.noteIds) ? recipe.noteIds : [];
   if (!ids.length) return 1;
   let total = 0;
@@ -98,7 +99,7 @@ function ingredientQuality(run, recipe) {
 function settleRecipe(run, events, recipe, served) {
   if (!recipe || recipe.status !== 'pending') return;
   const quality = served ? ingredientQuality(run, recipe) : 0;
-  const goodDish = served && quality >= 0.55;
+  const goodDish = served && quality >= INGREDIENT_QUALITY_THRESHOLD;
   recipe.status = goodDish ? 'served' : 'burned';
   recipe.quality = quality;
   if (goodDish) {
@@ -113,7 +114,8 @@ function settleRecipe(run, events, recipe, served) {
     recipe: recipe.id,
     served: goodDish,
     quality,
-    text: goodDish ? '접시 완성!' : '접시가 타버렸습니다.'
+    reason: goodDish ? null : (served ? 'quality' : 'serve-miss'),
+    text: goodDish ? '접시 완성!' : served ? `재료 품질 ${(quality * 100).toFixed(0)}%로 부족합니다.` : '서빙 박자를 놓쳐 접시가 타버렸습니다.'
   });
   updateAfterPatience(run, events);
 }

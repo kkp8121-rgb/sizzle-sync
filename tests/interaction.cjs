@@ -32,6 +32,37 @@ const { setup, artifacts, waitForAudio, save } = require('./browser-tools.cjs');
     } catch (error) { await test.page.screenshot({ path: path.join(artifacts, `${label}-error.png`) }); throw error; }
     finally { await test.close(); }
   }
+  {
+    const test = await setup({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true });
+    try {
+      await test.page.goto(test.url); await test.page.waitForFunction(() => window.__sizzle?.ready);
+      await test.page.locator('[data-action="start"]').click();
+      await test.page.waitForFunction(() => window.__sizzle.screen === 'play');
+      const hold = TRACKS[0].notes.find(note => note.type === 'hold');
+      assert.ok(hold, 'first-service has an authored hold for source aggregation');
+      const keys = ['d', 'f', 'j', 'k', 'Space'];
+      const button = test.page.locator(`.touch-controls button[data-lane="${hold.lane}"]`);
+      const cdp = await test.context.newCDPSession(test.page);
+      await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, configuration: 'mobile' });
+      const buttonBox = await button.boundingBox();
+      const touchPoint = { id: 77, x: buttonBox.x + buttonBox.width / 2, y: buttonBox.y + buttonBox.height / 2, radiusX: 12, radiusY: 12, force: 1 };
+      for (const note of TRACKS[0].notes.filter(note => note.at < hold.at)) {
+        await waitForAudio(test.page, note.at);
+        await test.page.keyboard.press(keys[note.lane]);
+      }
+      await waitForAudio(test.page, hold.at);
+      await test.page.keyboard.down(keys[hold.lane]);
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [touchPoint], modifiers: 0 });
+      await waitForAudio(test.page, hold.at + .2);
+      await test.page.keyboard.up(keys[hold.lane]);
+      await waitForAudio(test.page, hold.at + hold.duration + .25);
+      const completed = await test.page.evaluate(id => window.__sizzle.run.notes.find(note => note.id === id), hold.id);
+      assert.equal(completed.status, 'hit', 'touch source keeps a hold alive after keyboard release');
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [], modifiers: 0 });
+      report.push({ label: 'key-touch-hold', hold: hold.id, status: completed.status, errors: test.errors });
+      assert.deepEqual(test.errors, []); assert.deepEqual(test.failed, []);
+    } finally { await test.close(); }
+  }
   const test = await setup();
   try {
     await test.page.goto(test.url); await test.page.waitForFunction(() => window.__sizzle?.ready);
